@@ -1,13 +1,11 @@
-package com.weatherworld.weather_api
+package com.weatherworld.weatherapi
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
 class WeatherApiApplicationTests {
-
-	@Test
-	fun contextLoads() {
-	}
-
+    @Test
+    fun contextLoads() {
+    }
 }

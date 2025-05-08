@@ -1,4 +1,4 @@
-package com.weatherworld.weather_api
+package com.weatherworld.weatherapi
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class WeatherApiApplication
 
 fun main(args: Array<String>) {
-	runApplication<WeatherApiApplication>(*args)
+    runApplication<WeatherApiApplication>(*args)
 }

@@ -1,4 +1,4 @@
-package com.weatherworld.weatherapi
+package com.weatherworld
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

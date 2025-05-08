@@ -1,4 +1,4 @@
-package com.weatherworld.weatherapi
+package com.weatherworld
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

@@ -28,6 +28,8 @@ dependencies {
     // implementation(libs.spring.boot.security)
     implementation(libs.spring.boot.validation)
     implementation(libs.spring.boot.web)
+    implementation(libs.spring.boot.cache)
+    implementation(libs.caffeine.caching)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.reflect)
     implementation(libs.spring.cloud.openfeign)

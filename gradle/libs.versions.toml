@@ -10,6 +10,7 @@ kotlin-env = "6.5.1"
 bucket4k = "2.0.0"
 kotlin-test-coroutines = "1.10.2"
 springmockk = "4.0.2"
+caffeine-caching = "3.2.0"
 
 [libraries]
 # Kotlin
@@ -29,6 +30,7 @@ spring-boot-security = { module = "org.springframework.boot:spring-boot-starter-
 spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring-boot" }
 spring-boot-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+spring-boot-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "spring-boot"}
 
 # PostgreSQL
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgres" }
@@ -45,6 +47,9 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 
 # Ninja Mockk
 ninjamockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
+
+# Caffeine caching
+caffeine-caching = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine-caching"}
 
 [plugins]
 jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

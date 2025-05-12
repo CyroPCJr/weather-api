@@ -1,10 +1,12 @@
-
-#https://api.openweathermap.org/data/2.5/weather?q=piracicaba&units=metric&appid=57237434c6f3f6be4d957664a1cc748b
 weather:
   api:
     url: https://api.openweathermap.org/data/2.5
-    key: OPEN_WEATHER_API_KEY
+    key: ${OPEN_WEATHER_API_KEY}
 
 spring:
   main:
     allow-bean-definition-overriding: true
+
+spring.autoconfigure:
+  exclude:
+    - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class OpenWeatherApiResponse(
-    val coordinate: Coordinates,
+    val coord: Coordinates,
     val weather: List<Weather>,
     val base: String,
     val main: Main,

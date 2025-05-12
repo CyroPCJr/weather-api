@@ -1,10 +1,10 @@
 plugins {
-    kotlin("jvm") version "2.1.20"
-    kotlin("plugin.spring") version "2.1.20"
-    kotlin("plugin.serialization") version "2.1.20"
-    kotlin("plugin.jpa") version "2.1.20"
-    id("org.springframework.boot") version "3.4.5"
-    id("io.spring.dependency-management") version "1.1.7"
+    alias(libs.plugins.jvm)
+    alias(libs.plugins.spring)
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.jpa)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependecy.management)
 }
 
 group = "com.weatherworld"
@@ -25,17 +25,21 @@ extra["springCloudVersion"] = "2024.0.1"
 dependencies {
     implementation(libs.spring.boot.actuator)
     implementation(libs.spring.boot.data.jpa)
-    implementation(libs.spring.boot.security)
+    // implementation(libs.spring.boot.security)
     implementation(libs.spring.boot.validation)
     implementation(libs.spring.boot.web)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.reflect)
     implementation(libs.spring.cloud.openfeign)
+    implementation(libs.kotlin.dotenv)
+    implementation(libs.bucket4k)
     developmentOnly(libs.spring.boot.devtools)
     runtimeOnly(libs.postgresql)
     testImplementation(libs.spring.boot.test)
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.kotlin.test.coroutines)
     testImplementation(libs.spring.security.test)
+    testImplementation(libs.ninjamockk)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

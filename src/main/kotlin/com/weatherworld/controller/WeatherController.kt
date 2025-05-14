@@ -1,5 +1,6 @@
 package com.weatherworld.controller
 
+import com.weatherworld.exception.GlobalExceptionHandler
 import com.weatherworld.model.TemperatureUnit
 import com.weatherworld.service.WeatherService
 import com.weatherworld.util.ApiRateLimiter
@@ -21,14 +22,13 @@ final class WeatherController(
         @RequestParam city: String,
         @RequestParam(defaultValue = "METRIC") units: TemperatureUnit,
     ): ResponseEntity<Any> {
-        return if (rateLimiter.tryConsume()) {
-            val response = weatherService.getWeather(city, units)
-            return ResponseEntity.ok(response)
-        } else {
-            ResponseEntity
-                .status(HttpStatus.TOO_MANY_REQUESTS)
-                .body("Rate limit exceeded. Try again later.")
+        if (!rateLimiter.tryConsume()) {
+            val error = GlobalExceptionHandler.ErrorResponse("429", "Rate limit exceeded. Try again later.")
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error)
         }
+
+        val response = weatherService.getWeather(city, units)
+        return ResponseEntity.ok(response)
     }
 
     @GetMapping("/units")

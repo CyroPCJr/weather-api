@@ -10,8 +10,16 @@ import org.springframework.web.bind.annotation.RequestParam
 interface WeatherApiClient {
     @GetMapping("/weather")
     fun getWeatherByCity(
-        @RequestParam("q") city: String,
-        @RequestParam("appid") apiKey: String,
-        @RequestParam("units") temperatureUnit: TemperatureUnit = TemperatureUnit.METRIC,
+        @RequestParam(value = "q") city: String,
+        @RequestParam(value = "appid") apiKey: String,
+        @RequestParam(value = "units") temperatureUnit: TemperatureUnit = TemperatureUnit.METRIC,
+    ): OpenWeatherApiResponse
+
+    @GetMapping("/weather")
+    fun getWeatherByCoordinates(
+        @RequestParam(value = "lat") lat: Double,
+        @RequestParam(value = "lon") lon: Double,
+        @RequestParam(value = "appid") apiKey: String,
+        @RequestParam(value = "units") temperatureUnit: TemperatureUnit = TemperatureUnit.METRIC,
     ): OpenWeatherApiResponse
 }

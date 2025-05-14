@@ -10,7 +10,7 @@ suporte a cache, rate limiting e integrações externas como a **OpenWeather API
 ### 🔍 Consulta de Clima
 
 - [x] Buscar clima por cidade: `GET /weather?city=São Paulo`
-- [ ] Buscar clima por coordenadas: `GET /weather?lat=-22.7&lon=-47.6`
+- [x] Buscar clima por coordenadas: `GET /weather?lat=-22.7&lon=-47.6`
 - [ ] Buscar múltiplas cidades de uma vez: `GET /weather?cities=SP,RJ,BH`
 
 ### ⚡ Performance & Caching
@@ -74,9 +74,10 @@ suporte a cache, rate limiting e integrações externas como a **OpenWeather API
 
 ## 📘 API Endpoints
 
-| Método | Endpoint | Descrição                                                                                                              |
-|--------|----------|------------------------------------------------------------------------------------------------------------------------|
-| GET    | /weather | Retorna a previsão do tempo para uma cidade específica. Suporta cache, rate limit e customização de unidade de medida. |
+| Método | Endpoint                    | Descrição                                                                                                              |
+|--------|-----------------------------|------------------------------------------------------------------------------------------------------------------------|
+| GET    | /api/weather/by-city        | Retorna a previsão do tempo para uma cidade específica. Suporta cache, rate limit e customização de unidade de medida. |
+| GET    | /api/weather/by-coordinates | Retorna a previsão do tempo para uma cidade específica. Suporta cache, rate limit e customização de unidade de medida. |
 
 ---
 
@@ -91,29 +92,65 @@ Retorna os dados climáticos atuais de uma cidade.
 | city  | String          | ✅ Sim       | —      | Nome da cidade a ser consultada                                   |
 | units | TemperatureUnit | ❌ Não       | METRIC | Unidade de temperatura: METRIC (Celsius) ou IMPERIAL (Fahrenheit) |
 
+
+Retonar os dados climaticos atuais utilizando latitude e longitude
+
+### 📥 Parâmetros de query:
+
+| Nome  | Tipo            | Obrigatório | Padrão | Descrição                                                         |
+|-------|-----------------|-------------|--------|-------------------------------------------------------------------|
+| lat   | Double          | ✅ Sim       | —      | latitude                                                          |
+| lon   | Double          | ✅ Sim       | —      | longitude                                                         |
+| units | TemperatureUnit | ❌ Não       | METRIC | Unidade de temperatura: METRIC (Celsius) ou IMPERIAL (Fahrenheit) |
+
 ---
 
 #### ✅ Exemplo de resposta de sucesso (200 OK)
 
-```
-json
+```json
 {
-"name": "Piracicaba",
-"main": {
-"temp": 24.21,
-"feelsLike": 24.41,
-"tempMin": 24.21,
-"tempMax": 24.21,
-"pressure": 1023,
-"humidity": 66
-},
-"weather": [
-{
-"main": "Clouds",
-"description": "broken clouds",
-"icon": "04d"
-}
-]
+  "coord": {
+    "lon": -46.6361,
+    "lat": -23.5475
+  },
+  "weather": [{
+    "id": 800,
+    "main": "Clear",
+    "description": "clear sky",
+    "icon": "01d"
+  }],
+  "base": "stations",
+  "main": {
+    "temp": 294.32,
+    "feels_like": 295.05,
+    "temp_min": 293.89,
+    "temp_max": 294.51,
+    "pressure": 1023,
+    "humidity": 98,
+    "sea_level": 1023,
+    "grnd_level": 933
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 4.06,
+    "deg": 97,
+    "gust": 5.04
+  },
+  "clouds": {
+    "all": 0
+  },
+  "dt": 1747230002,
+  "sys": {
+    "type": 2,
+    "id": 2041565,
+    "country": "BR",
+    "sunrise": 1747215182,
+    "sunset": 1747254774
+  },
+  "timezone": -10800,
+  "id": 3448439,
+  "name": "São Paulo",
+  "cod": 200
 }
 ```
 

@@ -159,7 +159,7 @@ bash
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT.
+Este projeto está sob a [MIT License](LICENSE).
 
 ## ⚙️ Como rodar localmente
 

@@ -36,7 +36,7 @@ class WeatherControllerTest {
 
     @Test
     fun `should return weather when rate limit not exceeded`() {
-        val city = "Piracicaba"
+        val city = "São Paulo"
         val units = TemperatureUnit.METRIC
 
         val mockResponse =
@@ -90,14 +90,15 @@ class WeatherControllerTest {
                     ),
                 timezone = -10800,
                 id = 3453643,
-                name = "Piracicaba",
+                name = city,
                 cod = 200,
             )
 
         every { rateLimiter.tryConsume() } returns true
         every { weatherService.getWeather(city, units) } returns mockResponse
 
-        val mockRequest = MockMvcRequestBuilders.get("/api/weather").param("city", city).param("units", units.name)
+        val mockRequest =
+            MockMvcRequestBuilders.get("/api/weather/by-city").param("city", city).param("units", units.name)
 
         mockMvc
             .perform(
@@ -110,7 +111,7 @@ class WeatherControllerTest {
     fun `should return 429 when rate limit exceeded`() {
         every { rateLimiter.tryConsume() } returns false
         val mockRequest =
-            MockMvcRequestBuilders.get("/api/weather").param("city", "Piracicaba").param(
+            MockMvcRequestBuilders.get("/api/weather/by-city").param("city", "Piracicaba").param(
                 "units",
                 TemperatureUnit.METRIC.name,
             )
@@ -118,7 +119,7 @@ class WeatherControllerTest {
             .perform(
                 mockRequest,
             ).andExpect(status().isTooManyRequests)
-            .andExpect(content().string("Rate limit exceeded. Try again later."))
+            .andExpect(content().string("{\"cod\":\"429\",\"message\":\"Rate limit exceeded. Try again later.\"}"))
     }
 
     @Test
@@ -128,5 +129,59 @@ class WeatherControllerTest {
             .perform(mockRequest)
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(TemperatureUnit.entries.size))
+    }
+
+    @Test
+    fun `should return weather by coordinates when rate limit not exceeded`() {
+        val lat = -46.6361
+        val lon = -23.5475
+        val units = TemperatureUnit.METRIC
+
+        val mockResponse =
+            OpenWeatherApiResponse(
+                coord = Coordinates(lon = lon, lat = lat),
+                weather =
+                    listOf(
+                        Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d"),
+                    ),
+                base = "stations",
+                main =
+                    Main(
+                        temp = 24.21,
+                        feelsLike = 24.41,
+                        tempMin = 24.21,
+                        tempMax = 24.21,
+                        pressure = 1023,
+                        humidity = 66,
+                        seaLevel = 1023,
+                        groundLevel = 959,
+                    ),
+                visibility = 10000,
+                wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
+                rain = null,
+                clouds = Clouds(all = 82),
+                dt = 1747059178,
+                sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
+                timezone = -10800,
+                id = 3453643,
+                name = "São Paulo",
+                cod = 200,
+            )
+
+        every { rateLimiter.tryConsume() } returns true
+        every { weatherService.getWeatherByCoordinates(lat, lon, units) } returns mockResponse
+
+        val mockRequest =
+            MockMvcRequestBuilders
+                .get("/api/weather/by-coordinates")
+                .param("lat", lat.toString())
+                .param("lon", lon.toString())
+                .param("units", units.name)
+
+        mockMvc
+            .perform(mockRequest)
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.coord.lat").value(lat))
+            .andExpect(jsonPath("$.coord.lon").value(lon))
     }
 }

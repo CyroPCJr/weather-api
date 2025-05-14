@@ -10,3 +10,6 @@ spring:
 spring.autoconfigure:
   exclude:
     - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+    -
+spring.profiles:
+    active: dev #prod

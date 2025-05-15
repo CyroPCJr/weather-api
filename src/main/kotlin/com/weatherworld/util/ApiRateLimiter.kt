@@ -12,15 +12,23 @@ import java.time.Duration
 final class ApiRateLimiter {
     private val tokenBucket =
         SuspendingBucket.build {
-            val tokenPerRefill = 1000L
-            val refillDuration: Duration? = Duration.ofDays(1)
+            val tokenPerRefillMinutes = 60L
+            val tokenPerRefillMonth = 1_000_000L
+            val refillDurationMinutes: Duration? = Duration.ofMinutes(1)
+            val refillDurationMonth: Duration? = Duration.ofDays(30)
 
             addLimit {
                 BandwidthBuilder
                     .builder()
                     .capacity(
-                        tokenPerRefill,
-                    ).refillGreedy(tokenPerRefill, refillDuration)
+                        tokenPerRefillMinutes,
+                    ).refillGreedy(tokenPerRefillMinutes, refillDurationMinutes)
+            }
+            addLimit {
+                BandwidthBuilder
+                    .builder()
+                    .capacity(tokenPerRefillMonth)
+                    .refillGreedy(tokenPerRefillMonth, refillDurationMonth)
             }
         }
 

@@ -42,4 +42,17 @@ class WeatherService(
         } catch (ex: FeignException) {
             throw ExternalApiException("Error calling weather API: ${ex.message}")
         }
+
+    @Cacheable(CacheNames.WEATHER_BY_CITIES)
+    suspend fun getWeatherByCities(
+        cities: List<String>,
+        units: TemperatureUnit = TemperatureUnit.METRIC,
+    ): List<OpenWeatherApiResponse> =
+        try {
+            weatherApiClient.getWeatherByCities(cities, apiKey, units)
+        } catch (ex: FeignException.NotFound) {
+            throw CityNotFoundException("cities: ${ex.message}")
+        } catch (ex: FeignException) {
+            throw ExternalApiException("Error calling weather API: ${ex.message}")
+        }
 }

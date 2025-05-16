@@ -42,3 +42,11 @@ fun ApiRateLimiter.withRateLimit(block: () -> ResponseEntity<Any>): ResponseEnti
         val error = GlobalExceptionHandler.ErrorResponse("429", "Rate limit exceeded. Try again later.")
         ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error)
     }
+
+suspend fun ApiRateLimiter.withRateLimitCo(block: suspend () -> ResponseEntity<Any>): ResponseEntity<Any> =
+    if (this.tryConsume()) {
+        block()
+    } else {
+        val error = GlobalExceptionHandler.ErrorResponse("429", "Rate limit exceeded. Try again later.")
+        ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error)
+    }

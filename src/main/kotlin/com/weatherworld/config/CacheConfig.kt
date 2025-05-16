@@ -10,8 +10,9 @@ import java.util.concurrent.TimeUnit
 object CacheNames {
     const val WEATHER_BY_CITY = "weatherByCity"
     const val WEATHER_BY_COORDINATES = "weatherByCoordinates"
+    const val WEATHER_BY_CITIES = "weatherByCities"
 
-    fun all(): List<String> = listOf(WEATHER_BY_CITY, WEATHER_BY_COORDINATES)
+    fun all(): List<String> = listOf(WEATHER_BY_CITY, WEATHER_BY_COORDINATES, WEATHER_BY_CITIES)
 }
 
 @Configuration

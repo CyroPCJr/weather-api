@@ -22,4 +22,11 @@ interface WeatherApiClient {
         @RequestParam(value = "appid") apiKey: String,
         @RequestParam(value = "units") temperatureUnit: TemperatureUnit = TemperatureUnit.METRIC,
     ): OpenWeatherApiResponse
+
+    @GetMapping("/weather")
+    suspend fun getWeatherByCities(
+        @RequestParam(value = "cities") cities: List<String>,
+        @RequestParam(value = "appid") apiKey: String,
+        @RequestParam(value = "units") temperatureUnit: TemperatureUnit = TemperatureUnit.METRIC,
+    ): List<OpenWeatherApiResponse>
 }

@@ -28,7 +28,9 @@ class CacheConfig {
     @Bean
     fun cacheManager(caffeine: Caffeine<Any, Any>): CacheManager =
         CaffeineCacheManager().apply {
+            println("✅ Cache manager inicializado")
             setCaffeine(caffeine)
             setCacheNames(CacheNames.all())
+            println("✅ CacheManager inicializado com caches: ${CacheNames.all()}")
         }
 }

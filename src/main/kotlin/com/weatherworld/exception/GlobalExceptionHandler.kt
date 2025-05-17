@@ -59,4 +59,10 @@ class GlobalExceptionHandler(
                 )
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body)
         }
+
+    @ExceptionHandler(RateLimitExceededException::class)
+    fun handleRateLimitExceeded(ex: RateLimitExceededException): ResponseEntity<ErrorResponse> =
+        ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(ErrorResponse("429", ex.message ?: "Too many requests"))
 }

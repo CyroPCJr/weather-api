@@ -1,4 +1,4 @@
-package com.weatherworld.aspect
+package com.weatherworld.component
 
 import com.weatherworld.exception.RateLimitExceededException
 import com.weatherworld.util.ApiRateLimiter

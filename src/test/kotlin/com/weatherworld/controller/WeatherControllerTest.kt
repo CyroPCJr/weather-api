@@ -253,7 +253,7 @@ class WeatherControllerTest {
             )
 
         every { rateLimiter.tryConsume() } returns true
-        coEvery { weatherService.getWeatherByCities(cities) } returns dummyArrayWeather
+        coEvery { weatherService.getCachedWeatherByCities(cities) } returns dummyArrayWeather
 
         val mockRequest =
             MockMvcRequestBuilders
@@ -267,7 +267,7 @@ class WeatherControllerTest {
                 .andReturn()
 
         println(result.response.contentAsString)
-        coVerify(exactly = 1) { weatherService.getWeatherByCities(cities, TemperatureUnit.METRIC) }
+        coVerify(exactly = 1) { weatherService.getCachedWeatherByCities(cities, TemperatureUnit.METRIC) }
     }
 
     @Test

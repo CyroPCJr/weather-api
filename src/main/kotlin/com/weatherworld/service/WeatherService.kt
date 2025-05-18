@@ -1,12 +1,14 @@
 package com.weatherworld.service
 
 import com.weatherworld.client.WeatherApiClient
+import com.weatherworld.component.WeatherFallbackHandler
 import com.weatherworld.config.CacheNames
 import com.weatherworld.exception.CityNotFoundException
 import com.weatherworld.exception.ExternalApiException
 import com.weatherworld.model.TemperatureUnit
 import com.weatherworld.model.dto.OpenWeatherApiResponse
 import feign.FeignException
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Service
 class WeatherService(
     private val weatherApiClient: WeatherApiClient,
     @Value("\${weather.api.key}") private val apiKey: String,
+    private val fallbackHandler: WeatherFallbackHandler,
 ) {
+    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCity")
     @Cacheable(CacheNames.WEATHER_BY_CITY)
     fun getWeather(
         city: String,
@@ -33,6 +37,7 @@ class WeatherService(
             throw ExternalApiException("Error calling weather API: ${ex.message}")
         }
 
+    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCoordinate")
     @Cacheable(CacheNames.WEATHER_BY_COORDINATES)
     fun getWeatherByCoordinates(
         lat: Double,
@@ -47,6 +52,7 @@ class WeatherService(
             throw ExternalApiException("Error calling weather API: ${ex.message}")
         }
 
+    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCities")
     @Cacheable(CacheNames.WEATHER_BY_CITIES)
     fun getCachedWeatherByCities(
         cities: List<String>,
@@ -56,7 +62,7 @@ class WeatherService(
             getWeatherByCitiesAsync(cities, units)
         }
 
-    suspend fun getWeatherByCitiesAsync(
+    private suspend fun getWeatherByCitiesAsync(
         cities: List<String>,
         units: TemperatureUnit = TemperatureUnit.METRIC,
     ): List<OpenWeatherApiResponse> =
@@ -78,4 +84,23 @@ class WeatherService(
         } catch (ex: Exception) {
             throw ExternalApiException("Unexpected error while fetching weather data: ${ex.message}")
         }
+
+    private fun internalFallbackWeatherByCity(
+        city: String,
+        units: TemperatureUnit,
+        t: Throwable,
+    ): OpenWeatherApiResponse = fallbackHandler.fallbackWeatherByCity(city, units, t)
+
+    private fun internalFallbackWeatherByCoordinate(
+        lon: Double,
+        lat: Double,
+        units: TemperatureUnit,
+        t: Throwable,
+    ): OpenWeatherApiResponse = fallbackHandler.fallbackWeatherByCoordinates(lon, lat, units, t)
+
+    private fun internalFallbackWeatherByCities(
+        cities: List<String>,
+        units: TemperatureUnit,
+        t: Throwable,
+    ): List<OpenWeatherApiResponse> = fallbackHandler.fallbackWeatherByCities(cities, units, t)
 }

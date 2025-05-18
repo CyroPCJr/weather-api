@@ -29,6 +29,8 @@ dependencies {
     implementation(libs.spring.boot.validation)
     implementation(libs.spring.boot.web)
     implementation(libs.spring.reactivestreams)
+    implementation(libs.spring.resilience)
+    implementation(libs.spring.resilience.circuitbreaker)
     implementation(libs.spring.boot.cache)
     implementation(libs.caffeine.caching)
     implementation(libs.kotlinx.coroutines.core)

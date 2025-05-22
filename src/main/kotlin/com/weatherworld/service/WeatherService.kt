@@ -1,5 +1,6 @@
 package com.weatherworld.service
 
+import com.weatherworld.annotation.RateLimited
 import com.weatherworld.client.WeatherApiClient
 import com.weatherworld.component.WeatherFallbackHandler
 import com.weatherworld.config.CacheNames
@@ -23,19 +24,13 @@ class WeatherService(
     @Value("\${weather.api.key}") private val apiKey: String,
     private val fallbackHandler: WeatherFallbackHandler,
 ) {
+    @RateLimited
     @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCity")
     @Cacheable(CacheNames.WEATHER_BY_CITY)
     fun getWeather(
         city: String,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): OpenWeatherApiResponse =
-        try {
-            weatherApiClient.getWeatherByCity(city, apiKey, units)
-        } catch (_: FeignException.NotFound) {
-            throw CityNotFoundException(city)
-        } catch (ex: FeignException) {
-            throw ExternalApiException("Error calling weather API: ${ex.message}")
-        }
+    ): OpenWeatherApiResponse = weatherApiClient.getWeatherByCity(city, apiKey, units)
 
     @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCoordinate")
     @Cacheable(CacheNames.WEATHER_BY_COORDINATES)
@@ -43,14 +38,7 @@ class WeatherService(
         lat: Double,
         lon: Double,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): OpenWeatherApiResponse =
-        try {
-            weatherApiClient.getWeatherByCoordinates(lat, lon, apiKey, units)
-        } catch (_: FeignException.NotFound) {
-            throw CityNotFoundException("lat=$lat, lon=$lon")
-        } catch (ex: FeignException) {
-            throw ExternalApiException("Error calling weather API: ${ex.message}")
-        }
+    ): OpenWeatherApiResponse = weatherApiClient.getWeatherByCoordinates(lat, lon, apiKey, units)
 
     @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCities")
     @Cacheable(CacheNames.WEATHER_BY_CITIES)
@@ -65,25 +53,22 @@ class WeatherService(
     private suspend fun getWeatherByCitiesAsync(
         cities: List<String>,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): List<OpenWeatherApiResponse> =
-        try {
-            val normalizedCities = cities.map { it.lowercase().trim() }.sorted()
-            coroutineScope {
-                normalizedCities.map { city ->
-                    async {
-                        try {
-                            getWeather(city, units)
-                        } catch (_: FeignException.NotFound) {
-                            throw CityNotFoundException("City not found: $city")
-                        } catch (ex: FeignException) {
-                            throw ExternalApiException("Error fetching weather for city $city: ${ex.message}")
-                        }
+    ): List<OpenWeatherApiResponse> {
+        val normalizedCities = cities.map { it.lowercase().trim() }.sorted()
+        return coroutineScope {
+            normalizedCities.map { city ->
+                async {
+                    try {
+                        getWeather(city, units)
+                    } catch (_: FeignException.NotFound) {
+                        throw CityNotFoundException("City not found: $city")
+                    } catch (ex: FeignException) {
+                        throw ExternalApiException("Error fetching weather for city $city: ${ex.message}")
                     }
                 }
-            }.awaitAll()
-        } catch (ex: Exception) {
-            throw ExternalApiException("Unexpected error while fetching weather data: ${ex.message}")
-        }
+            }
+        }.awaitAll()
+    }
 
     private fun internalFallbackWeatherByCity(
         city: String,

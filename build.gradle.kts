@@ -25,12 +25,13 @@ extra["springCloudVersion"] = "2024.0.1"
 dependencies {
     implementation(libs.spring.boot.actuator)
     implementation(libs.spring.boot.data.jpa)
-    // implementation(libs.spring.boot.security)
     implementation(libs.spring.boot.validation)
     implementation(libs.spring.boot.web)
     implementation(libs.spring.reactivestreams)
     implementation(libs.spring.resilience)
     implementation(libs.spring.resilience.circuitbreaker)
+    implementation(libs.spring.resilience.micrometer)
+    implementation(libs.micrometer.registry)
     implementation(libs.spring.boot.cache)
     implementation(libs.caffeine.caching)
     implementation(libs.kotlinx.coroutines.core)
@@ -40,11 +41,11 @@ dependencies {
     implementation(libs.kotlin.dotenv)
     implementation(libs.bucket4k)
     developmentOnly(libs.spring.boot.devtools)
-    runtimeOnly(libs.postgresql)
-    testImplementation(libs.spring.boot.test)
+    testImplementation(libs.spring.boot.test) {
+        exclude(module = "mockito-core")
+    }
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.kotlin.test.coroutines)
-    testImplementation(libs.spring.security.test)
     testImplementation(libs.ninjamockk)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

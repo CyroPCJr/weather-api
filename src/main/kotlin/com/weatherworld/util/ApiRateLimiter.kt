@@ -9,11 +9,14 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 
 @Component
-final class ApiRateLimiter {
+class ApiRateLimiter {
+    companion object {
+        const val TOKEN_PER_REFILL_IN_MINUTES = 60L
+        const val TOKEN_PER_REFILL_PER_MONTH = 1_000_000L
+    }
+
     private val tokenBucket =
         SuspendingBucket.build {
-            val tokenPerRefillMinutes = 60L
-            val tokenPerRefillMonth = 1_000_000L
             val refillDurationMinutes: Duration? = Duration.ofMinutes(1)
             val refillDurationMonth: Duration? = Duration.ofDays(30)
 
@@ -21,14 +24,14 @@ final class ApiRateLimiter {
                 BandwidthBuilder
                     .builder()
                     .capacity(
-                        tokenPerRefillMinutes,
-                    ).refillGreedy(tokenPerRefillMinutes, refillDurationMinutes)
+                        TOKEN_PER_REFILL_IN_MINUTES,
+                    ).refillGreedy(TOKEN_PER_REFILL_IN_MINUTES, refillDurationMinutes)
             }
             addLimit {
                 BandwidthBuilder
                     .builder()
-                    .capacity(tokenPerRefillMonth)
-                    .refillGreedy(tokenPerRefillMonth, refillDurationMonth)
+                    .capacity(TOKEN_PER_REFILL_PER_MONTH)
+                    .refillGreedy(TOKEN_PER_REFILL_PER_MONTH, refillDurationMonth)
             }
         }
 

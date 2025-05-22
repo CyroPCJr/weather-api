@@ -10,9 +10,30 @@ spring:
 spring.autoconfigure:
   exclude:
     - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+    - io.github.resilience4j.springboot3.ratelimiter.autoconfigure.RateLimiterAutoConfiguration
 
 spring.aop:
-    proxy-target-class: true
+  proxy-target-class: true
 
 spring.profiles:
-    active: dev #prod
+  active: dev #prod
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,trace
+  metrics:
+    enable:
+      all: true
+    tags:
+      application: weather-api
+  endpoint:
+    prometheus:
+      enabled: true
+
+resilience4j.circuitbreaker:
+  instances:
+    weatherApi:
+      ignore-exceptions:
+        - feign.FeignException

@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.weatherworld"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 
 java {
     toolchain {
@@ -23,26 +23,39 @@ repositories {
 extra["springCloudVersion"] = "2024.0.1"
 
 dependencies {
-    implementation(libs.spring.boot.actuator)
+    // Spring Core
+    implementation(libs.spring.boot.web)
     implementation(libs.spring.boot.data.jpa)
     implementation(libs.spring.boot.validation)
-    implementation(libs.spring.boot.web)
+    implementation(libs.spring.boot.actuator)
+    implementation(libs.spring.boot.cache)
+
+    // Observable and Resilience
     implementation(libs.spring.reactivestreams)
     implementation(libs.spring.resilience)
     implementation(libs.spring.resilience.circuitbreaker)
     implementation(libs.spring.resilience.micrometer)
     implementation(libs.micrometer.registry)
-    implementation(libs.spring.boot.cache)
+
+    // Cache
     implementation(libs.caffeine.caching)
+
+    // Kotlin and utils
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlin.serialization)
     implementation(libs.kotlin.reflect)
-    implementation(libs.spring.cloud.openfeign)
     implementation(libs.kotlin.dotenv)
+
+    // Feign and Rate Limiting
+    implementation(libs.spring.cloud.openfeign)
     implementation(libs.bucket4k)
+
+    // Only dev
     developmentOnly(libs.spring.boot.devtools)
+
+    // Testes
     testImplementation(libs.spring.boot.test) {
-        exclude(module = "mockito-core")
+        exclude(module = "mockito-core") // Use ninjamockk
     }
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.kotlin.test.coroutines)
@@ -58,7 +71,10 @@ dependencyManagement {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xcontext-receivers",
+        )
     }
 }
 
@@ -70,4 +86,9 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.bootJar {
+    archiveFileName.set("weather-world-api.jar")
+    launchScript()
 }

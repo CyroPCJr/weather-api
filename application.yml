@@ -16,7 +16,7 @@ spring.aop:
   proxy-target-class: true
 
 spring.profiles:
-  active: dev #prod
+  active: prod
 
 management:
   endpoints:

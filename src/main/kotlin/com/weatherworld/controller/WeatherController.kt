@@ -3,7 +3,6 @@ package com.weatherworld.controller
 import com.weatherworld.annotation.RateLimited
 import com.weatherworld.model.TemperatureUnit
 import com.weatherworld.service.WeatherService
-import com.weatherworld.util.ApiRateLimiter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -17,13 +16,11 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/weather")
 class WeatherController(
     private val weatherService: WeatherService,
-    private val rateLimiter: ApiRateLimiter,
 ) {
     companion object {
         private const val MAX_CITIES_PER_REQUEST = 5
     }
 
-    @RateLimited
     @GetMapping("/by-city")
     fun getWeather(
         @RequestParam city: String,

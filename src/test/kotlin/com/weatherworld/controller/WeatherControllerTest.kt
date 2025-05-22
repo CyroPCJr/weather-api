@@ -19,7 +19,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import kotlin.test.Test
@@ -107,21 +106,6 @@ class WeatherControllerTest {
                 mockRequest,
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value(mockResponse.name))
-    }
-
-    @Test
-    fun `should return 429 when rate limit exceeded`() {
-        every { rateLimiter.tryConsume() } returns false
-        val mockRequest =
-            MockMvcRequestBuilders.get("/api/weather/by-city").param("city", "Piracicaba").param(
-                "units",
-                TemperatureUnit.METRIC.name,
-            )
-        mockMvc
-            .perform(
-                mockRequest,
-            ).andExpect(status().isTooManyRequests)
-            .andExpect(content().string("{\"cod\":\"429\",\"message\":\"Rate limit exceeded. Try again later.\"}"))
     }
 
     @Test
@@ -283,24 +267,6 @@ class WeatherControllerTest {
             mockMvc
                 .perform(mockRequest)
                 .andExpect(status().isBadRequest)
-                .andReturn()
-
-        println(result.response.contentAsString)
-    }
-
-    @Test
-    fun `should return 429 Too Many Requests when rate limit is exceeded`() {
-        every { rateLimiter.tryConsume() } returns false
-
-        val mockRequest =
-            MockMvcRequestBuilders
-                .get("/api/weather/by-cities")
-                .param("cities", "São Paulo")
-
-        val result =
-            mockMvc
-                .perform(mockRequest)
-                .andExpect(status().isTooManyRequests)
                 .andReturn()
 
         println(result.response.contentAsString)

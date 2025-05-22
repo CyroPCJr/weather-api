@@ -1,5 +1,8 @@
 package com.weatherworld.component
 
+import com.weatherworld.exception.CityNotFoundException
+import com.weatherworld.exception.FeignErrorHandler
+import com.weatherworld.exception.LonLatNotFoundException
 import com.weatherworld.model.TemperatureUnit
 import com.weatherworld.model.dto.Clouds
 import com.weatherworld.model.dto.Coordinates
@@ -9,39 +12,39 @@ import com.weatherworld.model.dto.Sys
 import com.weatherworld.model.dto.Weather
 import com.weatherworld.model.dto.Wind
 import org.springframework.stereotype.Component
-import java.time.Instant
 
 @Component
-class WeatherFallbackHandler {
+class WeatherFallbackHandler(
+    private val metrics: WeatherFallbackMetrics,
+) {
     fun fallbackWeatherByCity(
         city: String,
         units: TemperatureUnit,
-        ex: Throwable,
+        t: Throwable,
     ): OpenWeatherApiResponse {
-        println("⚠️ Fallback trigger on city: $city - ${ex.message}")
+        try {
+            metrics.recordFallBack(city)
+        } catch (t: Throwable) {
+            FeignErrorHandler.handle(t) {
+                throw CityNotFoundException(city)
+            }
+        }
         return OpenWeatherApiResponse(
-            coord = Coordinates(lon = -47.6492, lat = -22.7253),
-            weather = listOf(Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d")),
-            base = "stations",
-            main =
-                Main(
-                    temp = 24.21,
-                    feelsLike = 24.41,
-                    tempMin = 24.21,
-                    tempMax = 24.21,
-                    pressure = 1023,
-                    humidity = 66,
-                    seaLevel = 1023,
-                    groundLevel = 959,
+            coord = Coordinates(0.0, 0.0),
+            weather =
+                listOf(
+                    Weather(0, "Unavailable", "Service unavailable", "00d"),
                 ),
-            visibility = 10000,
-            wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
+            base = "fallback",
+            main = Main(24.21, 0.0, 0.0, 0.0, 0, 0, 0),
+            visibility = 0,
+            wind = Wind(0.0, 0, 0.0),
             rain = null,
-            clouds = Clouds(all = 82),
-            dt = Instant.now().epochSecond,
-            sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
-            timezone = -10800,
-            id = 3453643,
+            clouds = Clouds(0),
+            dt = 0,
+            sys = Sys(null, null, "??", 0, 0),
+            timezone = 0,
+            id = 0,
             name = city,
             cod = 200,
         )
@@ -53,30 +56,29 @@ class WeatherFallbackHandler {
         units: TemperatureUnit,
         ex: Throwable,
     ): OpenWeatherApiResponse {
-        println("⚠️ Fallback trigger on lon: $lon | lat: $lat - ${ex.message}")
+        try {
+            metrics.recordFallBack(lon, lat)
+        } catch (e: Throwable) {
+            FeignErrorHandler.handle(e) {
+                throw LonLatNotFoundException(lon = lon, lat = lat)
+            }
+        }
         return OpenWeatherApiResponse(
-            coord = Coordinates(lon = lon, lat = lat),
-            weather = listOf(Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d")),
-            base = "stations",
-            main =
-                Main(
-                    temp = 24.21,
-                    feelsLike = 24.41,
-                    tempMin = 24.21,
-                    tempMax = 24.21,
-                    pressure = 1023,
-                    humidity = 66,
-                    seaLevel = 1023,
-                    groundLevel = 959,
+            coord = Coordinates(0.0, 0.0),
+            weather =
+                listOf(
+                    Weather(0, "Unavailable", "Service unavailable", "00d"),
                 ),
-            visibility = 10000,
-            wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
+            base = "fallback",
+            main = Main(24.21, 0.0, 0.0, 0.0, 0, 0, 0),
+            visibility = 0,
+            wind = Wind(0.0, 0, 0.0),
             rain = null,
-            clouds = Clouds(all = 82),
-            dt = Instant.now().epochSecond,
-            sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
-            timezone = -10800,
-            id = 3453643,
+            clouds = Clouds(0),
+            dt = 0,
+            sys = Sys(null, null, "??", 0, 0),
+            timezone = 0,
+            id = 0,
             name = "city",
             cod = 200,
         )
@@ -86,10 +88,8 @@ class WeatherFallbackHandler {
         cities: List<String>,
         units: TemperatureUnit,
         ex: Throwable,
-    ): List<OpenWeatherApiResponse> {
-        println("⚠️ Fallback acionado para múltiplas cidades: $cities - ${ex.message}")
-        return cities.map { city ->
+    ): List<OpenWeatherApiResponse> =
+        cities.map { city ->
             fallbackWeatherByCity(city, units, ex)
         }
-    }
 }

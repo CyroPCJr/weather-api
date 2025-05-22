@@ -11,7 +11,7 @@ class ApiRateLimiterTest {
         runTest {
             val limiter = ApiRateLimiter()
 
-            repeat(1000) {
+            repeat(ApiRateLimiter.TOKEN_PER_REFILL_IN_MINUTES.toInt()) {
                 assertTrue(limiter.tryConsume(), "Should allow request $it")
             }
 

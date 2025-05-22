@@ -1,4 +1,4 @@
-package com.weatherworld.service
+package com.weatherworld.component
 
 import com.ninjasquad.springmockk.MockkBean
 import com.weatherworld.client.WeatherApiClient
@@ -6,8 +6,10 @@ import com.weatherworld.model.TemperatureUnit
 import feign.FeignException
 import feign.Request
 import feign.RequestTemplate
+import io.micrometer.core.instrument.MeterRegistry
 import io.mockk.every
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
@@ -16,20 +18,24 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 
-@AutoConfigureMockMvc
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
-class WeatherServiceTest {
+class MetricsIntegrationTest {
     @Autowired
     lateinit var mockMvc: MockMvc
 
+    @Autowired
+    lateinit var meterRegistry: MeterRegistry
+
     @MockkBean
-    private lateinit var weatherApiClient: WeatherApiClient
+    lateinit var weatherApiClient: WeatherApiClient
 
     @Test
-    fun `should return fallback when weatherApiClient per city`() {
+    fun `should register fallback metrics and circuit breaker`() {
         val city = "TestCity"
 
         val request =
@@ -57,5 +63,17 @@ class WeatherServiceTest {
                 .andReturn()
 
         assertThat(responseBody.response.contentAsString).contains("Service unavailable")
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
+            val fallbackCounter = meterRegistry.counter("weatherapi.fallback.calls", "city", city)
+            val cbTimer =
+                meterRegistry
+                    .find("resilience4j.circuitbreaker.calls")
+                    .tags("name", "weatherApi", "kind", "failed")
+                    .timer()
+
+            assertThat(fallbackCounter.count()).isGreaterThan(0.0)
+            assertThat(cbTimer?.count()).isEqualTo(0L)
+        }
     }
 }

@@ -1,5 +1,9 @@
 # 🌦️ WeatherWorld API
 
+[![Kotlin](https://img.shields.io/badge/kotlin-2.1.21-blueviolet?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/CyroPCJr/Arms-App/android-ci.yml?label=Build&logo=github)
+![GitHub License](https://img.shields.io/github/license/CyroPCJr/Arms-App)
+
 Uma API RESTful desenvolvida com **Spring Boot + Kotlin**, que fornece informações meteorológicas por cidade, com
 suporte a cache, rate limiting e integrações externas como a **OpenWeather API**.
 
@@ -11,12 +15,11 @@ suporte a cache, rate limiting e integrações externas como a **OpenWeather API
 
 - [x] Buscar clima por cidade: `GET /weather?city=São Paulo`
 - [x] Buscar clima por coordenadas: `GET /weather?lat=-22.7&lon=-47.6`
-- [ ] Buscar múltiplas cidades de uma vez: `GET /weather?cities=SP,RJ,BH`
+- [x] Buscar múltiplas cidades de uma vez: `GET /weather?cities=SP,RJ,BH`
 
 ### ⚡ Performance & Caching
 
-- [x] Cache com `@Cacheable` para evitar chamadas repetidas à OpenWeather API
-- [ ] Paginação e ordenação (para endpoints futuros como histórico)
+- [x] Sistema de cache pra otimizar o uso da OpenWeather API
 - [x] Testes de cache verificados com Spring Boot + Mockk
 
 ### 🔒 Rate Limiting
@@ -28,13 +31,11 @@ suporte a cache, rate limiting e integrações externas como a **OpenWeather API
 
 - [x] Integração com a OpenWeather API
 - [ ] Suporte a múltiplas APIs de clima (WeatherAPI, AccuWeather etc.)
-- [ ] Integração com Firebase (para log ou realtime)
 
 ### 🧪 Testes
 
 - [x] Testes unitários com Mockk e Spring Boot
-- [ ] Testes de integração reais com contextos carregados
-- [ ] Testes de carga para avaliar caching e throttling
+- [x] Testes de carga para avaliar caching e throttling
 
 ### 📊 Histórico e Tendências
 
@@ -92,7 +93,6 @@ Retorna os dados climáticos atuais de uma cidade.
 | city  | String          | ✅ Sim       | —      | Nome da cidade a ser consultada                                   |
 | units | TemperatureUnit | ❌ Não       | METRIC | Unidade de temperatura: METRIC (Celsius) ou IMPERIAL (Fahrenheit) |
 
-
 Retonar os dados climaticos atuais utilizando latitude e longitude
 
 ### 📥 Parâmetros de query:
@@ -113,12 +113,14 @@ Retonar os dados climaticos atuais utilizando latitude e longitude
     "lon": -46.6361,
     "lat": -23.5475
   },
-  "weather": [{
-    "id": 800,
-    "main": "Clear",
-    "description": "clear sky",
-    "icon": "01d"
-  }],
+  "weather": [
+    {
+      "id": 800,
+      "main": "Clear",
+      "description": "clear sky",
+      "icon": "01d"
+    }
+  ],
   "base": "stations",
   "main": {
     "temp": 294.32,
@@ -172,7 +174,6 @@ Retonar os dados climaticos atuais utilizando latitude e longitude
 * Spring Boot
 * Spring Cache
 * Bucket4j
-* Feign Client
 * OpenWeatherMap API
 * JUnit + MockK
 
@@ -182,7 +183,6 @@ Retonar os dados climaticos atuais utilizando latitude e longitude
 
 bash
 ./gradlew test
-
 
 ---
 

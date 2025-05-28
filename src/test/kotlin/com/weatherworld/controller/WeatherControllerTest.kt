@@ -10,265 +10,172 @@ import com.weatherworld.model.dto.Sys
 import com.weatherworld.model.dto.Weather
 import com.weatherworld.model.dto.Wind
 import com.weatherworld.service.WeatherService
-import com.weatherworld.util.ApiRateLimiter
 import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import okhttp3.mockwebserver.MockWebServer
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.WebTestClient
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
-@WebMvcTest(WeatherController::class)
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class WeatherControllerTest {
-    @Autowired
-    private lateinit var mockMvc: MockMvc
+    private lateinit var mockWebServer: MockWebServer
 
     @MockkBean
     private lateinit var weatherService: WeatherService
 
-    @MockkBean
-    private lateinit var rateLimiter: ApiRateLimiter
+    @Autowired
+    private lateinit var client: WebTestClient
 
-    @Test
-    fun `should return weather when rate limit not exceeded`() {
-        val city = "São Paulo"
-        val units = TemperatureUnit.METRIC
+    @BeforeEach
+    fun setup() {
+        mockWebServer = MockWebServer()
+        mockWebServer.start()
+    }
 
-        val mockResponse =
-            OpenWeatherApiResponse(
-                coord =
-                    Coordinates(
-                        lon = -47.6492,
-                        lat = -22.7253,
-                    ),
-                weather =
-                    listOf(
-                        Weather(
-                            id = 803,
-                            main = "Clouds",
-                            description = "broken clouds",
-                            icon = "04d",
-                        ),
-                    ),
-                base = "stations",
-                main =
-                    Main(
-                        temp = 24.21,
-                        feelsLike = 24.41,
-                        tempMin = 24.21,
-                        tempMax = 24.21,
-                        pressure = 1023,
-                        humidity = 66,
-                        seaLevel = 1023,
-                        groundLevel = 959,
-                    ),
-                visibility = 10000,
-                wind =
-                    Wind(
-                        speed = 4.35,
-                        deg = 125,
-                        gust = 5.55,
-                    ),
-                rain = null,
-                clouds =
-                    Clouds(
-                        all = 82,
-                    ),
-                dt = 1747059178,
-                sys =
-                    Sys(
-                        type = null,
-                        id = null,
-                        country = "BR",
-                        sunrise = 1747042492,
-                        sunset = 1747082348,
-                    ),
-                timezone = -10800,
-                id = 3453643,
-                name = city,
-                cod = 200,
-            )
-
-        every { rateLimiter.tryConsume() } returns true
-        every { weatherService.getWeather(city, units) } returns mockResponse
-
-        val mockRequest =
-            MockMvcRequestBuilders.get("/api/weather/by-city").param("city", city).param("units", units.name)
-
-        mockMvc
-            .perform(
-                mockRequest,
-            ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.name").value(mockResponse.name))
+    @AfterEach
+    fun teardown() {
+        mockWebServer.shutdown()
     }
 
     @Test
-    fun `should return supported temperature units`() {
-        val mockRequest = MockMvcRequestBuilders.get("/api/weather/units")
-        mockMvc
-            .perform(mockRequest)
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.length()").value(TemperatureUnit.entries.size))
-    }
-
-    @Test
-    fun `should return weather by coordinates when rate limit not exceeded`() {
-        val lat = -46.6361
-        val lon = -23.5475
-        val units = TemperatureUnit.METRIC
-
-        val mockResponse =
-            OpenWeatherApiResponse(
-                coord = Coordinates(lon = lon, lat = lat),
-                weather =
-                    listOf(
-                        Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d"),
-                    ),
-                base = "stations",
-                main =
-                    Main(
-                        temp = 24.21,
-                        feelsLike = 24.41,
-                        tempMin = 24.21,
-                        tempMax = 24.21,
-                        pressure = 1023,
-                        humidity = 66,
-                        seaLevel = 1023,
-                        groundLevel = 959,
-                    ),
-                visibility = 10000,
-                wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
-                rain = null,
-                clouds = Clouds(all = 82),
-                dt = 1747059178,
-                sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
-                timezone = -10800,
-                id = 3453643,
-                name = "São Paulo",
-                cod = 200,
-            )
-
-        every { rateLimiter.tryConsume() } returns true
-        every { weatherService.getWeatherByCoordinates(lat, lon, units) } returns mockResponse
-
-        val mockRequest =
-            MockMvcRequestBuilders
-                .get("/api/weather/by-coordinates")
-                .param("lat", lat.toString())
-                .param("lon", lon.toString())
-                .param("units", units.name)
-
-        mockMvc
-            .perform(mockRequest)
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.coord.lat").value(lat))
-            .andExpect(jsonPath("$.coord.lon").value(lon))
-    }
-
-    @Test
-    fun `should return 200 OK with weather data for valid cities`() {
-        val cities = listOf("São Paulo", "Rio de Janeiro")
-        val dummyArrayWeather =
-            listOf(
+    fun `should return data from the city`() =
+        runTest {
+            val cityName = "London"
+            val mockResponse =
                 OpenWeatherApiResponse(
-                    coord = Coordinates(lon = -46.6361, lat = -23.5475),
-                    weather =
-                        listOf(
-                            Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d"),
-                        ),
+                    coord = Coordinates(lat = -22.7253, lon = -47.6492),
+                    weather = listOf(Weather(803, "Clouds", "broken clouds", "04d")),
                     base = "stations",
                     main =
                         Main(
-                            temp = 24.21,
-                            feelsLike = 24.41,
-                            tempMin = 24.21,
-                            tempMax = 24.21,
-                            pressure = 1023,
-                            humidity = 66,
-                            seaLevel = 1023,
-                            groundLevel = 959,
+                            temp = 22.0,
+                            feelsLike = 22.0,
+                            tempMin = 22.0,
+                            tempMax = 22.0,
+                            pressure = 1013,
+                            humidity = 80,
+                            seaLevel = null,
+                            groundLevel = null,
                         ),
                     visibility = 10000,
-                    wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
+                    wind = Wind(4.35, 125, 5.55),
                     rain = null,
-                    clouds = Clouds(all = 82),
+                    clouds = Clouds(82),
                     dt = 1747059178,
-                    sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
+                    sys = Sys(null, null, "BR", 1747042492, 1747082348),
                     timezone = -10800,
                     id = 3453643,
-                    name = "São Paulo",
+                    name = cityName,
                     cod = 200,
-                ),
+                )
+
+            coEvery { weatherService.getWeather(cityName, TemperatureUnit.METRIC) } returns mockResponse
+
+            client
+                .get()
+                .uri("/api/weather/by-city?city=$cityName")
+                .exchange()
+                .expectStatus()
+                .isOk
+                .expectBody()
+                .jsonPath("$.name")
+                .isEqualTo(cityName)
+                .jsonPath("$.main.temp")
+                .isEqualTo(22.0)
+        }
+
+    @Test
+    fun `should return stream of weather data for multiple cities`() =
+        runTest {
+            val mockResponse1 =
                 OpenWeatherApiResponse(
-                    coord = Coordinates(lon = -43.2075, lat = -22.9028),
-                    weather =
-                        listOf(
-                            Weather(id = 803, main = "Clouds", description = "broken clouds", icon = "04d"),
-                        ),
+                    coord = Coordinates(lat = -22.7253, lon = -47.6492),
+                    weather = listOf(Weather(803, "Clouds", "broken clouds", "04d")),
                     base = "stations",
                     main =
                         Main(
-                            temp = 24.21,
-                            feelsLike = 24.41,
-                            tempMin = 24.21,
-                            tempMax = 24.21,
-                            pressure = 1023,
-                            humidity = 66,
-                            seaLevel = 1023,
-                            groundLevel = 959,
+                            temp = 22.0,
+                            feelsLike = 22.0,
+                            tempMin = 22.0,
+                            tempMax = 22.0,
+                            pressure = 1013,
+                            humidity = 80,
+                            seaLevel = null,
+                            groundLevel = null,
                         ),
                     visibility = 10000,
-                    wind = Wind(speed = 4.35, deg = 125, gust = 5.55),
+                    wind = Wind(4.35, 125, 5.55),
                     rain = null,
-                    clouds = Clouds(all = 82),
+                    clouds = Clouds(82),
                     dt = 1747059178,
-                    sys = Sys(type = null, id = null, country = "BR", sunrise = 1747042492, sunset = 1747082348),
+                    sys = Sys(null, null, "BR", 1747042492, 1747082348),
                     timezone = -10800,
                     id = 3453643,
-                    name = "Rio de Janeiro",
+                    name = "London",
                     cod = 200,
-                ),
-            )
+                )
+            val mockResponse2 =
+                OpenWeatherApiResponse(
+                    coord = Coordinates(lat = -22.7253, lon = -47.6492),
+                    weather = listOf(Weather(803, "Clouds", "broken clouds", "04d")),
+                    base = "stations",
+                    main =
+                        Main(
+                            temp = 22.0,
+                            feelsLike = 22.0,
+                            tempMin = 22.0,
+                            tempMax = 22.0,
+                            pressure = 1013,
+                            humidity = 80,
+                            seaLevel = null,
+                            groundLevel = null,
+                        ),
+                    visibility = 10000,
+                    wind = Wind(4.35, 125, 5.55),
+                    rain = null,
+                    clouds = Clouds(82),
+                    dt = 1747059178,
+                    sys = Sys(null, null, "BR", 1747042492, 1747082348),
+                    timezone = -10800,
+                    id = 3453643,
+                    name = "Berlin",
+                    cod = 200,
+                )
 
-        every { rateLimiter.tryConsume() } returns true
-        coEvery { weatherService.getCachedWeatherByCities(cities) } returns dummyArrayWeather
+            coEvery {
+                weatherService.getCachedWeatherByCities(listOf("London", "Berlin"), TemperatureUnit.METRIC)
+            } returns flowOf(mockResponse1, mockResponse2)
 
-        val mockRequest =
-            MockMvcRequestBuilders
-                .get("/api/weather/by-cities")
-                .param("cities", *cities.toTypedArray())
-
-        val result =
-            mockMvc
-                .perform(mockRequest)
-                .andExpect(status().isOk)
-                .andReturn()
-
-        println(result.response.contentAsString)
-        coVerify(exactly = 1) { weatherService.getCachedWeatherByCities(cities, TemperatureUnit.METRIC) }
-    }
-
-    @Test
-    fun `should return 400 Bad Request if more than 5 cities`() {
-        val cities = List(6) { "City$it" }
-
-        val mockRequest =
-            MockMvcRequestBuilders
-                .get("/api/weather/by-cities")
-                .param("cities", *cities.toTypedArray())
-
-        val result =
-            mockMvc
-                .perform(mockRequest)
-                .andExpect(status().isBadRequest)
-                .andReturn()
-
-        println(result.response.contentAsString)
-    }
+            client
+                .get()
+                .uri { uriBuilder ->
+                    uriBuilder
+                        .path("/api/weather/by-cities")
+                        .queryParam("cities", "London", "Berlin")
+                        .queryParam("units", "METRIC")
+                        .build()
+                }.accept(MediaType.APPLICATION_NDJSON) // importante para fluxo!
+                .exchange()
+                .expectStatus()
+                .isOk
+                .expectHeader()
+                .contentTypeCompatibleWith(MediaType.APPLICATION_NDJSON)
+                .expectBodyList(OpenWeatherApiResponse::class.java)
+                .hasSize(2)
+                .returnResult()
+                .responseBody
+                ?.let {
+                    assertEquals("London", it[0].name)
+                    assertEquals("Berlin", it[1].name)
+                }
+        }
 }

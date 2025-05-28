@@ -1,7 +1,6 @@
 package com.weatherworld.controller
 
 import com.ninjasquad.springmockk.MockkBean
-import com.weatherworld.client.WeatherApiClient
 import com.weatherworld.model.dto.Clouds
 import com.weatherworld.model.dto.Coordinates
 import com.weatherworld.model.dto.Main
@@ -10,36 +9,28 @@ import com.weatherworld.model.dto.Sys
 import com.weatherworld.model.dto.Weather
 import com.weatherworld.model.dto.Wind
 import com.weatherworld.service.WeatherService
-import io.mockk.every
-import io.mockk.verify
+import io.mockk.coEvery
+import kotlinx.coroutines.test.runTest
+import okhttp3.mockwebserver.MockWebServer
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.cache.CacheManager
-import org.springframework.cache.annotation.EnableCaching
-import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.test.web.reactive.server.WebTestClient
 import kotlin.test.Test
 
-@ExtendWith(SpringExtension::class)
-@SpringBootTest
-@EnableCaching
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class WeatherControllerCachingTest {
-    @MockkBean
-    private lateinit var apiClient: WeatherApiClient
+    private lateinit var mockWebServer: MockWebServer
 
-    @Autowired
+    @MockkBean
     private lateinit var weatherService: WeatherService
 
     @Autowired
-    private lateinit var cacheManager: CacheManager
-
-    @Value("\${weather.api.key}")
-    private lateinit var apiKey: String
+    private lateinit var webTestClient: WebTestClient
 
     private val sampleResponse =
         OpenWeatherApiResponse(
@@ -98,17 +89,59 @@ class WeatherControllerCachingTest {
 
     @BeforeEach
     fun setup() {
-        cacheManager.getCache("weatherByCity")?.clear()
-        every { weatherService.getWeather("Piracicaba", any()) } returns sampleResponse
+        mockWebServer = MockWebServer()
+        mockWebServer.start()
+    }
+
+    @AfterEach
+    fun teardown() {
+        mockWebServer.shutdown()
     }
 
     @Test
-    fun `should cache weather response for the same city`() {
-        val response1 = weatherService.getWeather("Piracicaba")
-        val response2 = weatherService.getWeather("Piracicaba")
+    fun `should return cached response`() =
+        runTest {
+            val cityName = "Piracicaba"
 
-        assertThat(response1).isEqualTo(response2)
+            coEvery { weatherService.getWeather(cityName, any()) } returns sampleResponse
 
-        verify(exactly = 1) { apiClient.getWeatherByCity("Piracicaba", apiKey) }
-    }
+            webTestClient
+                .get()
+                .uri("/api/weather/by-city?city=$cityName")
+                .exchange()
+                .expectStatus()
+                .isOk
+        }
+
+    @Test
+    fun `should cache response after first call`() =
+        runTest {
+            val cityName = "Piracicaba"
+
+            coEvery { weatherService.getWeather(cityName, any()) } returns sampleResponse
+
+            val firstResponse =
+                webTestClient
+                    .get()
+                    .uri("/api/weather/by-city?city=$cityName")
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .returnResult()
+                    .responseBody
+
+            val secondResponse =
+                webTestClient
+                    .get()
+                    .uri("/api/weather/by-city?city=$cityName")
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBody()
+                    .returnResult()
+                    .responseBody
+
+            assertThat(secondResponse).isEqualTo(firstResponse)
+        }
 }

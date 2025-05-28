@@ -6,6 +6,7 @@ weather:
 spring:
   main:
     allow-bean-definition-overriding: true
+    web-application-type: reactive
 
 spring.autoconfigure:
   exclude:
@@ -32,8 +33,15 @@ management:
     prometheus:
       enabled: true
 
-resilience4j.circuitbreaker:
-  instances:
-    weatherApi:
-      ignore-exceptions:
-        - feign.FeignException
+resilience4j:
+  circuitbreaker:
+    instances:
+      weatherApi:
+        registerHealthIndicator: true
+        slidingWindowSize: 2
+        minimumNumberOfCalls: 1
+        permittedNumberOfCallsInHalfOpenState: 1
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 10

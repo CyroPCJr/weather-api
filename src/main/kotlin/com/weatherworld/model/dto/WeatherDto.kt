@@ -73,3 +73,25 @@ data class Sys(
     val sunrise: Long,
     val sunset: Long,
 )
+
+fun openWeatherResponseDefault(
+    city: String = "CityFallback",
+    lon: Double = 0.0,
+    lat: Double = 0.0,
+): OpenWeatherApiResponse =
+    OpenWeatherApiResponse(
+        coord = Coordinates(lon, lat),
+        weather = listOf(Weather(0, "Unavailable", "Service unavailable", "00d")),
+        base = "fallback",
+        main = Main(0.0, 0.0, 0.0, 0.0, 0, 0, 0),
+        visibility = 0,
+        wind = Wind(0.0, 0, 0.0),
+        rain = null,
+        clouds = Clouds(0),
+        dt = 0,
+        sys = Sys(null, null, "??", 0, 0),
+        timezone = 0,
+        id = 0,
+        name = city,
+        cod = 200,
+    )

@@ -1,61 +1,52 @@
 package com.weatherworld.service
 
 import com.ninjasquad.springmockk.MockkBean
-import com.weatherworld.client.WeatherApiClient
+import com.weatherworld.exception.CityNotFoundException
 import com.weatherworld.model.TemperatureUnit
-import feign.FeignException
-import feign.Request
-import feign.RequestTemplate
-import io.mockk.every
+import io.mockk.coEvery
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import java.nio.charset.StandardCharsets
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
 import kotlin.test.Test
 
-@AutoConfigureMockMvc
-@SpringBootTest
 @ActiveProfiles("test")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 class WeatherServiceTest {
-    @Autowired
-    lateinit var mockMvc: MockMvc
-
     @MockkBean
-    private lateinit var weatherApiClient: WeatherApiClient
+    private lateinit var weatherService: WeatherService
+
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
 
     @Test
-    fun `should return fallback when weatherApiClient per city`() {
-        val city = "TestCity"
+    fun `should return fallback when weatherService throws exception`() =
+        runTest {
+            val city = "TestCity"
 
-        val request =
-            Request.create(
-                Request.HttpMethod.GET,
-                "http://localhost/mock-endpoint",
-                emptyMap(),
-                ByteArray(0),
-                StandardCharsets.UTF_8,
-                RequestTemplate(),
-            )
+            coEvery {
+                weatherService.getWeather(city, TemperatureUnit.METRIC)
+            } throws CityNotFoundException(city)
 
-        every {
-            weatherApiClient.getWeatherByCity(city, any(), any())
-        } throws FeignException.ServiceUnavailable("mock", request, ByteArray(0), emptyMap())
-
-        val responseBody =
-            mockMvc
-                .perform(
-                    MockMvcRequestBuilders
-                        .get("/api/weather/by-city")
-                        .param("city", city)
-                        .param("units", TemperatureUnit.METRIC.name),
-                ).andExpect(status().isOk)
-                .andReturn()
-
-        assertThat(responseBody.response.contentAsString).contains("Service unavailable")
-    }
+            webTestClient
+                .get()
+                .uri { uriBuilder ->
+                    uriBuilder
+                        .path("/api/weather/by-city")
+                        .queryParam("city", city)
+                        .queryParam("units", TemperatureUnit.METRIC.name)
+                        .build()
+                }.exchange()
+                .expectStatus()
+                .isNotFound
+                .expectBody<String>()
+                .consumeWith { result ->
+                    assertThat(result.responseBody).contains("'$city' not found")
+                }
+        }
 }

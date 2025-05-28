@@ -1,11 +1,9 @@
 package com.weatherworld.controller
 
-import com.weatherworld.annotation.RateLimited
 import com.weatherworld.model.TemperatureUnit
+import com.weatherworld.model.dto.OpenWeatherApiResponse
 import com.weatherworld.service.WeatherService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -22,35 +20,30 @@ class WeatherController(
     }
 
     @GetMapping("/by-city")
-    fun getWeather(
+    suspend fun getWeather(
         @RequestParam city: String,
-        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit,
-    ): ResponseEntity<Any> = ResponseEntity.ok(weatherService.getWeather(city))
+        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit = TemperatureUnit.METRIC,
+    ): ResponseEntity<OpenWeatherApiResponse> = ResponseEntity.ok(weatherService.getWeather(city, units))
 
-    @RateLimited
     @GetMapping("/by-coordinates")
-    fun getWeatherByCoordinates(
+    suspend fun getWeatherByCoordinates(
         @RequestParam lat: Double,
         @RequestParam lon: Double,
-        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit,
-    ): ResponseEntity<Any> = ResponseEntity.ok(weatherService.getWeatherByCoordinates(lat, lon, units))
+        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit = TemperatureUnit.METRIC,
+    ): ResponseEntity<OpenWeatherApiResponse> = ResponseEntity.ok(weatherService.getWeatherByCoordinates(lat, lon, units))
 
-    @RateLimited
     @GetMapping("/by-cities")
     fun getWeatherByCities(
         @RequestParam cities: List<String>,
-        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit,
-    ): ResponseEntity<Any> =
-        runBlocking {
-            if (cities.size > MAX_CITIES_PER_REQUEST) {
-                return@runBlocking ResponseEntity.badRequest().body("Maximum $MAX_CITIES_PER_REQUEST cities per call.")
-            }
-
-            return@runBlocking withContext(Dispatchers.Default) {
-                val responseWeather = weatherService.getCachedWeatherByCities(cities, units)
-                ResponseEntity.ok(responseWeather)
+        @RequestParam(defaultValue = "METRIC") units: TemperatureUnit = TemperatureUnit.METRIC,
+    ): Flow<OpenWeatherApiResponse> {
+        cities.also {
+            require(it.size <= MAX_CITIES_PER_REQUEST) {
+                "Maximum $MAX_CITIES_PER_REQUEST cities per call."
             }
         }
+        return weatherService.getCachedWeatherByCities(cities, units)
+    }
 
     @GetMapping("/units")
     fun getSupportedUnits(): List<String> = TemperatureUnit.entries.map { it.name }

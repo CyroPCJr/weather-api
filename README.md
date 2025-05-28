@@ -2,7 +2,7 @@
 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.1.21-blueviolet?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/CyroPCJr/Arms-App/android-ci.yml?label=Build&logo=github)
-![GitHub License](https://img.shields.io/github/license/CyroPCJr/Arms-App)
+![GitHub License](https://img.shields.io/github/license/CyroPCJr/weather-api)
 
 Uma API RESTful desenvolvida com **Spring Boot + Kotlin**, que fornece informações meteorológicas por cidade, com
 suporte a cache, rate limiting e integrações externas como a **OpenWeather API**.

@@ -25,6 +25,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 🔧 Dar permissão ao Gradle Wrapper
+        run: chmod +x ./gradlew
           
       - name: 🐘 Configurar Gradle Wrapper
         uses: gradle/actions/setup-gradle@v3

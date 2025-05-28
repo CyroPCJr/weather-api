@@ -1,91 +1,154 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.weatherworld.service
 
-import com.weatherworld.annotation.RateLimited
-import com.weatherworld.client.WeatherApiClient
+import com.github.benmanes.caffeine.cache.Cache
 import com.weatherworld.component.WeatherFallbackHandler
+import com.weatherworld.component.WebClientConfig
+import com.weatherworld.component.rateLimited
 import com.weatherworld.config.CacheNames
 import com.weatherworld.exception.CityNotFoundException
 import com.weatherworld.exception.ExternalApiException
 import com.weatherworld.model.TemperatureUnit
 import com.weatherworld.model.dto.OpenWeatherApiResponse
-import feign.FeignException
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
+import com.weatherworld.util.ApiRateLimiter
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
+import io.github.resilience4j.kotlin.circuitbreaker.executeSuspendFunction
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cache.annotation.Cacheable
+import org.springframework.cache.CacheManager
+import org.springframework.cache.caffeine.CaffeineCache
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClientResponseException
+import org.springframework.web.reactive.function.client.awaitBody
 
 @Service
 class WeatherService(
-    private val weatherApiClient: WeatherApiClient,
     @Value("\${weather.api.key}") private val apiKey: String,
     private val fallbackHandler: WeatherFallbackHandler,
+    private val webClient: WebClientConfig,
+    private val rateLimiter: ApiRateLimiter,
+    cacheManager: CacheManager,
+    circuitBreakerRegistry: CircuitBreakerRegistry,
 ) {
-    @RateLimited
-    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCity")
-    @Cacheable(CacheNames.WEATHER_BY_CITY)
-    fun getWeather(
+    private val weatherByCityCache: Cache<in Any, in Any> =
+        (cacheManager.getCache(CacheNames.WEATHER_BY_CITY) as CaffeineCache).nativeCache
+
+    private val weatherByCoordinatesCache: Cache<in Any, in Any> =
+        (cacheManager.getCache(CacheNames.WEATHER_BY_COORDINATES) as CaffeineCache).nativeCache
+
+    private val circuitBreaker = circuitBreakerRegistry.circuitBreaker("weatherApi")
+
+    suspend fun getWeather(
         city: String,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): OpenWeatherApiResponse = weatherApiClient.getWeatherByCity(city, apiKey, units)
+    ): OpenWeatherApiResponse {
+        val cacheKey = "${city.lowercase()}:${units.name}"
+        weatherByCityCache.getIfPresent(cacheKey)?.let { return it as OpenWeatherApiResponse }
 
-    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCoordinate")
-    @Cacheable(CacheNames.WEATHER_BY_COORDINATES)
-    fun getWeatherByCoordinates(
+        return runCatching {
+            circuitBreaker.executeSuspendFunction {
+                fetchWeatherByCity(city, units)
+            }
+        }.onSuccess {
+            weatherByCityCache.put(cacheKey, it)
+        }.getOrElse { ex ->
+            fallbackHandler.fallbackWeatherByCity(city, ex)
+        }
+    }
+
+    suspend fun getWeatherByCoordinates(
         lat: Double,
         lon: Double,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): OpenWeatherApiResponse = weatherApiClient.getWeatherByCoordinates(lat, lon, apiKey, units)
+    ): OpenWeatherApiResponse {
+        val cacheKey = "$lat:$lon:${units.name}"
+        weatherByCoordinatesCache.getIfPresent(cacheKey)?.let { return it as OpenWeatherApiResponse }
 
-    @CircuitBreaker(name = "weatherApi", fallbackMethod = "internalFallbackWeatherByCities")
-    @Cacheable(CacheNames.WEATHER_BY_CITIES)
+        return runCatching {
+            circuitBreaker.executeSuspendFunction {
+                fetchWeatherByCoordinates(lat, lon, units)
+            }
+        }.onSuccess {
+            weatherByCoordinatesCache.put(cacheKey, it)
+        }.getOrElse { ex ->
+            fallbackHandler.fallbackWeatherByCoordinates(lon, lat, ex)
+        }
+    }
+
     fun getCachedWeatherByCities(
         cities: List<String>,
         units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): List<OpenWeatherApiResponse> =
-        runBlocking {
-            getWeatherByCitiesAsync(cities, units)
-        }
-
-    private suspend fun getWeatherByCitiesAsync(
-        cities: List<String>,
-        units: TemperatureUnit = TemperatureUnit.METRIC,
-    ): List<OpenWeatherApiResponse> {
-        val normalizedCities = cities.map { it.lowercase().trim() }.sorted()
-        return coroutineScope {
-            normalizedCities.map { city ->
-                async {
-                    try {
-                        getWeather(city, units)
-                    } catch (_: FeignException.NotFound) {
-                        throw CityNotFoundException("City not found: $city")
-                    } catch (ex: FeignException) {
-                        throw ExternalApiException("Error fetching weather for city $city: ${ex.message}")
-                    }
+    ): Flow<OpenWeatherApiResponse> =
+        cities
+            .asFlow()
+            .map { it.lowercase().trim() }
+            .flatMapConcat { city ->
+                flow {
+                    val result =
+                        runCatching {
+                            circuitBreaker.executeSuspendFunction {
+                                getWeather(city, units)
+                            }
+                        }.getOrElse { ex ->
+                            fallbackHandler.fallbackWeatherByCity(city, ex)
+                        }
+                    emit(result)
                 }
             }
-        }.awaitAll()
-    }
 
-    private fun internalFallbackWeatherByCity(
+    private suspend fun fetchWeatherByCity(
         city: String,
         units: TemperatureUnit,
-        t: Throwable,
-    ): OpenWeatherApiResponse = fallbackHandler.fallbackWeatherByCity(city, units, t)
+    ): OpenWeatherApiResponse =
+        rateLimited(rateLimiter) {
+            try {
+                webClient
+                    .webClient()
+                    .get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .queryParam("q", city)
+                            .queryParam("units", units.name)
+                            .queryParam("appid", apiKey)
+                            .build()
+                    }.retrieve()
+                    .awaitBody()
+            } catch (_: WebClientResponseException.NotFound) {
+                throw CityNotFoundException(city)
+            } catch (ex: Exception) {
+                throw ExternalApiException("Error fetching weather for city $city: ${ex.message}")
+            }
+        }
 
-    private fun internalFallbackWeatherByCoordinate(
-        lon: Double,
+    private suspend fun fetchWeatherByCoordinates(
         lat: Double,
+        lon: Double,
         units: TemperatureUnit,
-        t: Throwable,
-    ): OpenWeatherApiResponse = fallbackHandler.fallbackWeatherByCoordinates(lon, lat, units, t)
-
-    private fun internalFallbackWeatherByCities(
-        cities: List<String>,
-        units: TemperatureUnit,
-        t: Throwable,
-    ): List<OpenWeatherApiResponse> = fallbackHandler.fallbackWeatherByCities(cities, units, t)
+    ): OpenWeatherApiResponse =
+        rateLimited(rateLimiter) {
+            try {
+                webClient
+                    .webClient()
+                    .get()
+                    .uri { uriBuilder ->
+                        uriBuilder
+                            .queryParam("lon", lon)
+                            .queryParam("lat", lat)
+                            .queryParam("units", units.name.lowercase())
+                            .queryParam("appid", apiKey)
+                            .build()
+                    }.retrieve()
+                    .awaitBody()
+            } catch (_: WebClientResponseException.NotFound) {
+                throw CityNotFoundException("Coordinates not found: $lat,$lon")
+            } catch (ex: Exception) {
+                throw ExternalApiException("Error fetching weather for coordinates $lat,$lon: ${ex.message}")
+            }
+        }
 }

@@ -1,95 +1,46 @@
 package com.weatherworld.component
 
-import com.weatherworld.exception.CityNotFoundException
-import com.weatherworld.exception.FeignErrorHandler
-import com.weatherworld.exception.LonLatNotFoundException
-import com.weatherworld.model.TemperatureUnit
-import com.weatherworld.model.dto.Clouds
-import com.weatherworld.model.dto.Coordinates
-import com.weatherworld.model.dto.Main
 import com.weatherworld.model.dto.OpenWeatherApiResponse
-import com.weatherworld.model.dto.Sys
-import com.weatherworld.model.dto.Weather
-import com.weatherworld.model.dto.Wind
+import com.weatherworld.model.dto.openWeatherResponseDefault
+import io.micrometer.core.instrument.MeterRegistry
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 @Component
 class WeatherFallbackHandler(
-    private val metrics: WeatherFallbackMetrics,
+    private val meterRegistry: MeterRegistry,
 ) {
+    companion object {
+        private val log = LoggerFactory.getLogger(WeatherFallbackHandler::class.java)
+    }
+
     fun fallbackWeatherByCity(
         city: String,
-        units: TemperatureUnit,
-        t: Throwable,
+        throwable: Throwable,
     ): OpenWeatherApiResponse {
-        try {
-            metrics.recordFallBack(city)
-        } catch (t: Throwable) {
-            FeignErrorHandler.handle(t) {
-                throw CityNotFoundException(city)
-            }
-        }
-        return OpenWeatherApiResponse(
-            coord = Coordinates(0.0, 0.0),
-            weather =
-                listOf(
-                    Weather(0, "Unavailable", "Service unavailable", "00d"),
-                ),
-            base = "fallback",
-            main = Main(24.21, 0.0, 0.0, 0.0, 0, 0, 0),
-            visibility = 0,
-            wind = Wind(0.0, 0, 0.0),
-            rain = null,
-            clouds = Clouds(0),
-            dt = 0,
-            sys = Sys(null, null, "??", 0, 0),
-            timezone = 0,
-            id = 0,
-            name = city,
-            cod = 200,
-        )
+        meterRegistry.counter("weather.fallback.by_city", "city", city).increment()
+        log.warn("Fallback triggered for city=$city due to: ${throwable.javaClass.simpleName} - ${throwable.message}")
+        return openWeatherResponseDefault(city)
     }
 
     fun fallbackWeatherByCoordinates(
         lon: Double,
         lat: Double,
-        units: TemperatureUnit,
-        ex: Throwable,
+        throwable: Throwable,
     ): OpenWeatherApiResponse {
-        try {
-            metrics.recordFallBack(lon, lat)
-        } catch (e: Throwable) {
-            FeignErrorHandler.handle(e) {
-                throw LonLatNotFoundException(lon = lon, lat = lat)
-            }
-        }
-        return OpenWeatherApiResponse(
-            coord = Coordinates(0.0, 0.0),
-            weather =
-                listOf(
-                    Weather(0, "Unavailable", "Service unavailable", "00d"),
-                ),
-            base = "fallback",
-            main = Main(24.21, 0.0, 0.0, 0.0, 0, 0, 0),
-            visibility = 0,
-            wind = Wind(0.0, 0, 0.0),
-            rain = null,
-            clouds = Clouds(0),
-            dt = 0,
-            sys = Sys(null, null, "??", 0, 0),
-            timezone = 0,
-            id = 0,
-            name = "city",
-            cod = 200,
-        )
+        meterRegistry.counter("weather.fallback.by_coordinates", "lat", "$lat", "lon", "$lon").increment()
+        log.warn("Fallback triggered for coordinates=($lat,$lon) due to: ${throwable.javaClass.simpleName} - ${throwable.message}")
+        return openWeatherResponseDefault(lon = lon, lat = lat)
     }
 
     fun fallbackWeatherByCities(
         cities: List<String>,
-        units: TemperatureUnit,
-        ex: Throwable,
-    ): List<OpenWeatherApiResponse> =
-        cities.map { city ->
-            fallbackWeatherByCity(city, units, ex)
+        throwable: Throwable,
+    ): List<OpenWeatherApiResponse> {
+        meterRegistry.counter("weather.fallback.by_cities", "count", cities.size.toString()).increment()
+        log.warn("Fallback triggered for multiple cities due to: ${throwable.javaClass.simpleName} - ${throwable.message}")
+        return cities.map { city ->
+            openWeatherResponseDefault(city)
         }
+    }
 }

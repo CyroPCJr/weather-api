@@ -86,6 +86,7 @@ tasks.test {
 }
 
 tasks.bootJar {
+    exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
     archiveFileName.set("weather-world-api.jar")
     launchScript()
 }

@@ -3,7 +3,8 @@ kotlin = "2.1.21"
 spring-boot = "3.5.0"
 spring-dependency-management = "1.1.7"
 spring-reactive = "1.0.4"
-spring-resilience = "2.3.0"
+spring-resilience = "2.2.0"
+spring-resilience-others = "2.3.0"
 kotlin-serialization = "1.8.1"
 kotlin-env = "6.5.1"
 kotlin-coroutines = "1.10.2"
@@ -33,9 +34,9 @@ spring-boot-test = { module = "org.springframework.boot:spring-boot-starter-test
 spring-boot-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "spring-boot" }
 spring-reactivestreams = { module = "org.reactivestreams:reactive-streams", version.ref = "spring-reactive" }
 spring-resilience = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "spring-resilience" }
-spring-resilience-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "spring-resilience" }
-spring-resilience-micrometer = { module = "io.github.resilience4j:resilience4j-micrometer", version.ref = "spring-resilience" }
-spring-resilience-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "spring-resilience" }
+spring-resilience-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version = "spring-resilience-others" }
+spring-resilience-micrometer = { module = "io.github.resilience4j:resilience4j-micrometer", version = "spring-resilience-others" }
+spring-resilience-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version = "spring-resilience-others" }
 # Mockk Web Service
 mock-webserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "mockwebserver" }
 # Micrometer Registry

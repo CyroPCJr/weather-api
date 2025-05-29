@@ -36,7 +36,10 @@ dependencies {
 
     // Observabilidade e Resilience4j
     implementation(libs.spring.reactivestreams)
-    implementation(libs.spring.resilience)
+    implementation(libs.spring.resilience) {
+        exclude(group = "io.github.resilience4j", module = "resilience4j-rxjava3")
+    }
+
     implementation(libs.spring.resilience.kotlin)
     implementation(libs.spring.resilience.circuitbreaker)
     implementation(libs.spring.resilience.micrometer)
@@ -85,8 +88,11 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.bootJar {
+tasks.withType<Jar> {
     exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+}
+
+tasks.bootJar {
     archiveFileName.set("weather-world-api.jar")
     launchScript()
 }

@@ -1,0 +1,95 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: '21'
+  GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      OPEN_WEATHER_API_KEY: ${{ secrets.OPEN_WEATHER_API_KEY }}
+    
+    steps:
+      - name: ⬇️ Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: ☕ Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: 🔧 Dar permissão ao Gradle Wrapper
+        run: chmod +x ./gradlew
+          
+      - name: 🐘 Configurar Gradle Wrapper
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: wrapper
+          
+      - name: 🔍 Validar Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v3
+        
+      - name: ⚙️ Cache de dependências
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.m2/repository
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: 🧹 Limpar build anterior
+        run: ./gradlew clean
+        
+      - name: 🔧 Compilar código
+        run: ./gradlew compileJava compileTestJava
+        
+      - name: 🧪 Executar testes unitários
+        run: ./gradlew test
+        
+      - name: 📊 Gerar relatório de cobertura
+        run: ./gradlew jacocoTestReport
+        continue-on-error: true
+        
+      - name: 📈 Upload relatório de cobertura para Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./build/reports/jacoco/test/jacocoTestReport.xml
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true
+        
+      - name: 🛠️ Build aplicação
+        run: ./gradlew bootJar
+        
+      - name: 🔍 Listar arquivos gerados
+        run: ls -la build/libs/
+        
+      - name: 📦 Upload JAR como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-api-${{ github.sha }}-jar
+          path: build/libs/*.jar
+          retention-days: 30
+          
+      - name: 📋 Upload relatórios de teste
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ github.sha }}
+          path: |
+            build/reports/tests/
+            build/test-results/
+          retention-days: 7

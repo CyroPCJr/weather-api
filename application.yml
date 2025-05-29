@@ -1,0 +1,47 @@
+weather:
+  api:
+    url: https://api.openweathermap.org/data/2.5
+    key: ${OPEN_WEATHER_API_KEY}
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    web-application-type: reactive
+
+spring.autoconfigure:
+  exclude:
+    - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+    - io.github.resilience4j.springboot3.ratelimiter.autoconfigure.RateLimiterAutoConfiguration
+
+spring.aop:
+  proxy-target-class: true
+
+spring.profiles:
+  active: prod
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,trace
+  metrics:
+    enable:
+      all: true
+    tags:
+      application: weather-api
+  endpoint:
+    prometheus:
+      enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      weatherApi:
+        registerHealthIndicator: true
+        slidingWindowSize: 2
+        minimumNumberOfCalls: 1
+        permittedNumberOfCallsInHalfOpenState: 1
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 10

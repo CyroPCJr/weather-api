@@ -1,63 +1,91 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25"
-	id("org.springframework.boot") version "3.4.5"
-	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("plugin.jpa") version "1.9.25"
+    alias(libs.plugins.jvm)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.spring)
+    alias(libs.plugins.serialization)
 }
 
 group = "com.weatherworld"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
-extra["springCloudVersion"] = "2024.0.1"
+// Spring Cloud BOM
+val springCloudVersion = "2024.0.1"
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+    }
+}
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-security")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.flywaydb:flyway-database-postgresql")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
-	implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	runtimeOnly("org.postgresql:postgresql")
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	testImplementation("org.springframework.security:spring-security-test")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
+    // Spring Core
+    implementation(libs.spring.boot.webflux)
+    implementation(libs.spring.boot.validation)
+    implementation(libs.spring.boot.actuator)
+    implementation(libs.spring.boot.cache)
 
-dependencyManagement {
-	imports {
-		mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
-	}
+    // Observabilidade e Resilience4j
+    implementation(libs.spring.reactivestreams)
+    implementation(libs.spring.resilience)
+    implementation(libs.spring.resilience.kotlin)
+    implementation(libs.spring.resilience.circuitbreaker)
+    implementation(libs.spring.resilience.micrometer)
+    implementation(libs.micrometer.registry)
+
+    // Cache
+    implementation(libs.caffeine.caching)
+
+    // Kotlin e utilitários
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.reactor)
+    implementation(libs.kotlin.serialization)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.kotlin.dotenv)
+
+    // Rate limiting
+    implementation(libs.bucket4k)
+
+    // Dev
+    developmentOnly(libs.spring.boot.devtools)
+
+    // Testes
+    testImplementation(libs.mock.webserver)
+    testImplementation(libs.spring.boot.test) {
+        exclude(module = "mockito-core") // usando NinjaMockk
+    }
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ninjamockk)
 }
 
 kotlin {
-	compilerOptions {
-		freeCompilerArgs.addAll("-Xjsr305=strict")
-	}
+    compilerOptions {
+        freeCompilerArgs.add("-Xjsr305=strict")
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
 }
 
 allOpen {
-	annotation("jakarta.persistence.Entity")
-	annotation("jakarta.persistence.MappedSuperclass")
-	annotation("jakarta.persistence.Embeddable")
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.bootJar {
+    archiveFileName.set("weather-world-api.jar")
+    launchScript()
 }

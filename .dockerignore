@@ -1,0 +1,134 @@
+# Build artifacts
+build/
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README*
+LICENSE*
+docs/
+
+# Test files
+src/test/
+**/test/
+**/*test*
+**/*Test*
+**/*IT*
+**/*IntegrationTest*
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Dependency directories
+.gradle/cache/
+.gradle/wrapper/dists/
+
+# Misc
+*.swp
+*.swo
+*~
+
+# Build outputs
+/build
+/out
+/dist
+/**/*.class
+
+# IntelliJ / VSCode / Eclipse
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Gradle
+.gradle/
+**/build/
+**/out/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+
+# Arquivos temporários / sistema
+*.log
+*.tmp
+*.swp
+*.DS_Store
+*.bak
+*.orig
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Testes e cobertura
+/test/
+**/test-results/
+**/test-report/
+
+# Credenciais
+*.env
+.env.*
+secrets.*
+*.keystore
+
+# JAR local (já gerado pelo builder stage)
+*.jar

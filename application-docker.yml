@@ -1,0 +1,13 @@
+spring:
+  profiles:
+    active: docker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  metrics:
+    export:
+      simple:
+        enabled: true

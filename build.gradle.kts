@@ -27,6 +27,13 @@ dependencyManagement {
     }
 }
 
+// Configurações de otimização
+configurations.all {
+    // Excluir apenas duplicatas de logging desnecessárias
+    exclude(group = "org.apache.logging.log4j", module = "log4j-to-slf4j")
+    exclude(group = "org.slf4j", module = "jul-to-slf4j")
+}
+
 dependencies {
     // Spring Core
     implementation(libs.spring.boot.webflux)
@@ -88,11 +95,33 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Configurações de otimização de JAR
 tasks.withType<Jar> {
     exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
+    exclude("META-INF/maven/**")
+    exclude("**/*.md", "**/*.txt")
+    exclude("**/module-info.class")
+    exclude("META-INF/LICENSE*", "META-INF/NOTICE*")
+    exclude("META-INF/DEPENDENCIES*")
+    
+    // Compression
+    entryCompression = ZipEntryCompression.DEFLATED
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 tasks.bootJar {
     archiveFileName.set("weather-world-api.jar")
-    launchScript()
+    
+    // Otimizações básicas e seguras
+    exclude("META-INF/maven/**")
+    exclude("**/*.md", "**/*.txt", "**/*.html")
+    exclude("**/module-info.class")
+    exclude("META-INF/LICENSE*", "META-INF/NOTICE*")
+    exclude("META-INF/DEPENDENCIES*")
+    
+    // Configurar layers para melhor cache
+    layered {
+        enabled = true
+    }
 }

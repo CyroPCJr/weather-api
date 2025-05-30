@@ -1,20 +1,20 @@
 package com.weatherworld.component
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
 class WebClientConfig {
-    @Value("\${weather.api.url}")
-    private lateinit var weatherApiUrl: String
+    companion object {
+        private const val WEATHER_API_URL = "https://api.openweathermap.org/data/2.5"
+    }
 
     @Bean
     fun webClient(): WebClient =
         WebClient
             .builder()
-            .baseUrl("$weatherApiUrl/weather")
+            .baseUrl("$WEATHER_API_URL/weather")
             .defaultHeader("Accept", "application/json")
             .build()
 }

@@ -84,10 +84,9 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
+            cyropcjr/weather-api:latest
             cyropcjr/weather-api:${{ github.sha }}
-            ${{ github.ref_name == 'main' && 'cyropcjr/weather-api:latest' || format('cyropcjr/weather-api:{0}', github.ref_name) }}
-          cache-from: type=gha,scope=${{ github.ref_name }}
-          cache-to: type=gha,mode=max,scope=${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

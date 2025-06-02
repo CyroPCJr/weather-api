@@ -27,9 +27,9 @@ dependencyManagement {
     }
 }
 
-// Configurações de otimização
+// optimization settings
 configurations.all {
-    // Excluir apenas duplicatas de logging desnecessárias
+    // Exclude duplicates unnecessaries logs
     exclude(group = "org.apache.logging.log4j", module = "log4j-to-slf4j")
     exclude(group = "org.slf4j", module = "jul-to-slf4j")
 }
@@ -41,7 +41,7 @@ dependencies {
     implementation(libs.spring.boot.actuator)
     implementation(libs.spring.boot.cache)
 
-    // Observabilidade e Resilience4j
+    // React streams e Resilience4j
     implementation(libs.spring.reactivestreams)
     implementation(libs.spring.resilience) {
         exclude(group = "io.github.resilience4j", module = "resilience4j-rxjava3")
@@ -55,7 +55,7 @@ dependencies {
     // Cache
     implementation(libs.caffeine.caching)
 
-    // Kotlin e utilitários
+    // Kotlin e utils
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.reactor)
     implementation(libs.kotlin.serialization)
@@ -68,7 +68,7 @@ dependencies {
     // Dev
     developmentOnly(libs.spring.boot.devtools)
 
-    // Testes
+    // Tests
     testImplementation(libs.mock.webserver)
     testImplementation(libs.spring.boot.test) {
         exclude(module = "mockito-core") // usando NinjaMockk
@@ -95,7 +95,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Configurações de otimização de JAR
+// Optimization setting jar
 tasks.withType<Jar> {
     exclude("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
     exclude("META-INF/maven/**")
@@ -103,7 +103,7 @@ tasks.withType<Jar> {
     exclude("**/module-info.class")
     exclude("META-INF/LICENSE*", "META-INF/NOTICE*")
     exclude("META-INF/DEPENDENCIES*")
-    
+
     // Compression
     entryCompression = ZipEntryCompression.DEFLATED
     isPreserveFileTimestamps = false
@@ -112,15 +112,14 @@ tasks.withType<Jar> {
 
 tasks.bootJar {
     archiveFileName.set("weather-world-api.jar")
-    
-    // Otimizações básicas e seguras
+
     exclude("META-INF/maven/**")
     exclude("**/*.md", "**/*.txt", "**/*.html")
     exclude("**/module-info.class")
     exclude("META-INF/LICENSE*", "META-INF/NOTICE*")
     exclude("META-INF/DEPENDENCIES*")
-    
-    // Configurar layers para melhor cache
+
+    // layers for cache
     layered {
         enabled = true
     }

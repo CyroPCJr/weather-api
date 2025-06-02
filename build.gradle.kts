@@ -30,6 +30,7 @@ dependencyManagement {
 // optimization settings
 configurations.all {
     // Exclude duplicates unnecessaries logs
+    
     exclude(group = "org.apache.logging.log4j", module = "log4j-to-slf4j")
     exclude(group = "org.slf4j", module = "jul-to-slf4j")
 }
@@ -94,6 +95,7 @@ allOpen {
 tasks.test {
     useJUnitPlatform()
 }
+
 
 // Optimization setting jar
 tasks.withType<Jar> {

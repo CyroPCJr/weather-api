@@ -1,7 +1,6 @@
 package com.weatherworld.config
 
 import io.github.cdimascio.dotenv.Dotenv
-import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Configuration
 
@@ -9,8 +8,7 @@ import org.springframework.context.annotation.Configuration
 class DotenvConfig {
     private val log = LoggerFactory.getLogger(DotenvConfig::class.java)
 
-    @PostConstruct
-    fun loadEnv() {
+    init {
         runCatching {
             Dotenv
                 .configure()

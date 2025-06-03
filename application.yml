@@ -1,6 +1,6 @@
 weather:
   api:
-    key: ${WEATHER_API_KEY:your-api-key-here}
+    key: ${OPEN_WEATHER_API_KEY}
 
 spring:
   main:

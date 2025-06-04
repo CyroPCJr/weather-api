@@ -85,8 +85,6 @@ jobs:
           context: .
           file: Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            cyropcjr/weather-api:latest
-            cyropcjr/weather-api:${{ github.sha }}
+          tags: cyropcjr/weather-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

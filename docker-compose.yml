@@ -8,7 +8,8 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - OPEN_WEATHER_API_KEY=${OPEN_WEATHER_API_KEY}
+      - WEATHER_API_KEY=${OPEN_WEATHER_API_KEY}
+      - PORT=8080
       - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
     restart: unless-stopped
     healthcheck:

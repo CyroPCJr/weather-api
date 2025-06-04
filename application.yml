@@ -10,6 +10,10 @@ spring:
     allow-bean-definition-overriding: true
     web-application-type: reactive
 
+logging:
+  level:
+    org.springframework.boot.web.embedded.netty: DEBUG
+
 spring.autoconfigure:
   exclude:
     - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

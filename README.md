@@ -8,58 +8,16 @@
 Uma API RESTful desenvolvida com **Spring Boot + Kotlin**, que fornece informações meteorológicas por cidade, com
 suporte a cache, rate limiting e integrações externas como a **OpenWeather API**.
 
----
-
-## 🚀 Funcionalidades
-
-### 🔍 Consulta de Clima
-
-- [x] Buscar clima por cidade: `GET /weather?city=São Paulo`
-- [x] Buscar clima por coordenadas: `GET /weather?lat=-22.7&lon=-47.6`
-- [x] Buscar múltiplas cidades de uma vez: `GET /weather?cities=SP,RJ,BH`
-
-### ⚡ Performance & Caching
-
-- [x] Sistema de cache pra otimizar o uso da OpenWeather API
-- [x] Testes de cache verificados com Spring Boot + Mockk
-
-### 🔒 Rate Limiting
-
-- [x] Limite de requisições usando Bucket4k (1000 requisições/dia)
-- [x] Retorno amigável em caso de limite atingido (`HTTP 429 Too Many Requests`)
-
-### 🌐 Integrações
-
-- [x] Integração com a OpenWeather API
-- [ ] Suporte a múltiplas APIs de clima (WeatherAPI, AccuWeather etc.)
-
-### 🧪 Testes
-
-- [x] Testes unitários com Mockk e Spring Boot
-- [x] Testes de carga para avaliar caching e throttling
-
-### 📊 Histórico e Tendências
-
-- [ ] Armazenar histórico de consultas
-- [ ] Permitir consulta de clima passado (via OpenWeather Historical ou cache interno)
-
-### 🧠 Inteligência
-
-- [ ] Recomendação automática (ex: “Leve guarda-chuva”)
-- [ ] Classificação de clima em categorias ("ensolarado", "instável", "chuva leve"...)
-
----
-
 ## 🛠️ Tecnologias
 
-- Kotlin + Spring Boot
+- Kotlin + Spring Boot 3
 - Spring Cache + CacheManager
 - Bucket4k (Rate Limiting)
 - OpenWeather API
 - Gradle Kotlin DSL
-- JUnit 5 + Mockk
-- Docker (planejado)
-- GitHub Actions (CI/CD planejado)
+- JUnit 5 + NinjaMockk
+- Docker
+- GitHub Actions
 
 ---
 
@@ -166,17 +124,6 @@ Retonar os dados climaticos atuais utilizando latitude e longitude
 | 404    | Cidade não encontrada | { "cod": "404", "message": "City 'x' not found" }                    |
 | 429    | Rate limit excedido   | { "cod": "429", "message": "Rate limit exceeded. Try again later." } |
 | 500    | Erro interno da API   | { "cod": "500", "message": "Error calling weather API: ..." }        |
-
----
-
-## 🛠️ Tecnologias utilizadas
-
-* Kotlin
-* Spring Boot
-* Spring Cache
-* Bucket4j
-* OpenWeatherMap API
-* JUnit + MockK
 
 ---
 

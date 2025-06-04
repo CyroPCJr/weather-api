@@ -3,7 +3,7 @@
 [![Kotlin](https://img.shields.io/badge/kotlin-2.1.21-blueviolet?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?logo=springboot)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/CyroPCJr/weather-api/build-test-ci.yml?label=Build&logo=github)
-![License](https://img.shields.io/badge/license-MIT-blue)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/CyroPCJr/weather-api/blob/main/LICENSE)
 
 Uma API RESTful desenvolvida com **Spring Boot + Kotlin**, que fornece informações meteorológicas por cidade, com
 suporte a cache, rate limiting e integrações externas como a **OpenWeather API**.

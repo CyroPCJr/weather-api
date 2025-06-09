@@ -10,7 +10,7 @@ kotlin-env = "6.5.1"
 kotlin-coroutines = "1.10.2"
 bucket4k = "2.0.0"
 springmockk = "4.0.2"
-caffeine-caching = "3.2.0"
+caffeine-caching = "3.2.1"
 micrometer-registry = "1.15.0"
 mockwebserver = "4.12.0"
 
